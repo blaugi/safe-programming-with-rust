@@ -62,7 +62,7 @@ mod tests {
     fn test_zero_dimensions() {
         let sala = Sala { largura: 0.0, profundidade: 4.0, altura: 3.0 };
         assert_eq!(sala.area_piso(), 0.0);
-        assert_eq!(sala.area_parede_frontal(), 12.0);
+        assert_eq!(sala.area_parede_frontal(), 0.0);
         assert_eq!(sala.area_parede_lateral(), 12.0);
         assert_eq!(sala.volume(), 0.0);
     }

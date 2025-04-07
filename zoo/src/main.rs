@@ -1,14 +1,12 @@
 use serde::{Deserialize, Serialize};
-use serde_json::from_reader;
+use serde_json::{from_reader, to_writer};
 use std::fs::File;
-use std::{fs::read, io};
+use std::io;
 
 fn main() {
-    let mut animais = load_from_json();
-    menu();
-    save_to_json(&animais);
+    let mut animais = load_animals();
+    menu(&mut animais);
 }
-
 
 fn read_input() -> String {
     let mut input = String::new();
@@ -18,23 +16,32 @@ fn read_input() -> String {
     input.trim().to_string()
 }
 
-fn menu() {
-    loop{
+fn menu(animais: &mut Vec<Animal>) {
+    loop {
+        println!("");
         println!("1 - Listar Animais");
         println!("2 - Incluir Animal");
         println!("3 - Editar Animal");
         println!("4 - Excluir Animal");
         println!("5 - Sair");
+        println!("");
 
-        number = read_input();
+        let number_str = read_input();
+        let number = match number_str.parse::<usize>() {
+            Ok(num) => num,
+            Err(_) => {
+                println!("Por favor, digite um número válido.");
+                continue; // Pular o resto do loop
+            }
+        };
         if number == 1 {
-            listar_animais(&animais)
+            listar_animais(animais)
         } else if number == 2 {
-            incluir_animal(&mut animais)
+            incluir_animal(animais)
         } else if number == 3 {
-            editar_animal(&mut animais)
+            editar_animal(animais)
         } else if number == 4 {
-            excluir_animal(&mut animais)
+            excluir_animal(animais)
         } else if number == 5 {
             println!("Tchau!");
             break;
@@ -44,53 +51,70 @@ fn menu() {
     }
 }
 
-
 fn cria_animal(nome: String, tipo: String) -> Animal {
-    animal = Animal(tipo, nome);
+    let animal = Animal { tipo, nome };
     animal
 }
 
-fn incluir_animal(animais : &animais){
+fn incluir_animal(animais: &mut Vec<Animal>) {
     println!("Qual o tipo do animal?");
-    tipo = read_input();
+    let tipo = read_input();
     println!("Qual o nome do animal?");
-    nome = read_input();
+    let nome = read_input();
 
-    animal = cria_animal(nome, tipo);
-    animais.push(animal)
+    let animal = cria_animal(nome, tipo);
+    animais.push(animal);
+    save_to_json(&animais);
 }
 
-
-fn editar_animal(animais : &animais){
+fn editar_animal(animais: &mut Vec<Animal>) {
     println!("Qual o id do animal?");
-    let id:u32 = read_input();
+    let id = read_input().parse::<usize>().unwrap();
     println!("Qual o novo tipo do animal?");
-    tipo = read_input();
+    let tipo = read_input();
     println!("Qual o novo nome do animal?");
-    nome = read_input();
+    let nome = read_input();
 
     animais[id] = cria_animal(nome, tipo);
+    save_to_json(&animais);
 }
 
-fn excluir_animal(animais : &animais){
+fn excluir_animal(animais: &mut Vec<Animal>) {
     println!("Qual o id do animal?");
-    let id:u32 = read_input();
-    
-    animais.remove(id)
+    let id = read_input().parse::<usize>().unwrap();
+
+    animais.remove(id);
+    save_to_json(&animais);
 }
 
+fn listar_animais(animais: &Vec<Animal>) {
+    for (id, animal) in animais.iter().enumerate() {
+        println!("Id: {}, Tipo: {}, Nome: {}", id, animal.tipo, animal.nome);
+    }
+}
 #[derive(Serialize, Deserialize)]
 struct Animal {
     tipo: String,
     nome: String,
 }
 
-fn save_to_json(animais: &Vec<Animais>) {
+fn save_to_json(animais: &Vec<Animal>) {
     let file = File::create("animais.json").expect("Erro ao criar arquivo");
     to_writer(file, &animais).expect("Erro ao salvar dados em JSON");
 }
 
-fn load_from_json() -> Vec<Animal> {
-    let file = File::open("animais.json").expect("Erro ao abrir arquivo");
-    from_reader(file).expect("Erro ao carregar dados do JSON")
+fn load_from_json(filename: &str) -> Result<Vec<Animal>, Box<dyn std::error::Error>> {
+    let file = File::open(filename)?;
+    let animals = from_reader(file)?;
+    Ok(animals)
+}
+
+fn load_animals() -> Vec<Animal> {
+    match load_from_json("animais.json") {
+        Ok(animais) => animais,
+        Err(e) => {
+            eprintln!("Erro ao carregar arquivo JSON: {}. Criando novo vetor.", e);
+            Vec::<Animal>::new()
+        }
+    }
 }

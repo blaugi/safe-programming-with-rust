@@ -1,1 +1,6 @@
-**/target
+**/target/
+**/debug/
+
+**/*.rs.bk
+
+**/*.pdb

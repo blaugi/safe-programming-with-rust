@@ -51,40 +51,109 @@ fn menu(animais: &mut Vec<Animal>) {
     }
 }
 
+/// Cria um novo animal com o nome e tipo especificados.
+/// 
+/// # Parâmetros
+/// - `nome`: O nome do animal a ser criado.
+/// - `tipo`: O tipo ou espécie do animal.
+/// 
+/// # Retorno
+/// - Uma nova instância da estrutura Animal.
 fn cria_animal(nome: String, tipo: String) -> Animal {
     let animal = Animal { tipo, nome };
     animal
 }
 
+/// Adiciona um novo animal ao zoológico.
+/// 
+/// # Parâmetros
+/// - `animais`: Referência mutável ao vetor de animais.
+/// 
+/// # Efeitos
+/// - Solicita informações do animal ao usuário.
+/// - Adiciona o novo animal ao vetor.
+/// - Salva os dados atualizados em JSON.
 fn incluir_animal(animais: &mut Vec<Animal>) {
     println!("Qual o tipo do animal?");
     let tipo = read_input();
     println!("Qual o nome do animal?");
     let nome = read_input();
 
-    let animal = cria_animal(nome, tipo);
+    let animal = cria_animal(nome.clone(), tipo.clone());
     animais.push(animal);
     save_to_json(&animais);
+    
+    println!("✅ Animal '{}' do tipo '{}' adicionado com sucesso!", nome, tipo);
 }
 
+/// Edita as informações de um animal existente no zoológico.
+/// 
+/// # Parâmetros
+/// - `animais`: Referência mutável ao vetor de animais.
+/// 
+/// # Efeitos
+/// - Solicita o ID do animal a ser editado.
+/// - Solicita novas informações para o animal.
+/// - Atualiza o animal no vetor.
+/// - Salva os dados atualizados em JSON.
 fn editar_animal(animais: &mut Vec<Animal>) {
     println!("Qual o id do animal?");
-    let id = read_input().parse::<usize>().unwrap();
+    let id_str = read_input();
+    let id = match id_str.parse::<usize>() {
+        Ok(id) if id < animais.len() => id,
+        Ok(_) => {
+            println!("❌ ID inválido: animal não encontrado!");
+            return;
+        },
+        Err(_) => {
+            println!("❌ Por favor, digite um número válido para o ID.");
+            return;
+        }
+    };
+    
     println!("Qual o novo tipo do animal?");
     let tipo = read_input();
     println!("Qual o novo nome do animal?");
     let nome = read_input();
 
-    animais[id] = cria_animal(nome, tipo);
+    let animal_antigo = &animais[id];
+    animais[id] = cria_animal(nome.clone(), tipo.clone());
     save_to_json(&animais);
+    
+    println!("✅ Animal atualizado com sucesso!");
+    println!("   Antes: Tipo: {}, Nome: {}", animal_antigo.tipo, animal_antigo.nome);
+    println!("   Depois: Tipo: {}, Nome: {}", tipo, nome);
 }
 
+/// Remove um animal do zoológico pelo ID.
+/// 
+/// # Parâmetros
+/// - `animais`: Referência mutável ao vetor de animais.
+/// 
+/// # Efeitos
+/// - Solicita o ID do animal a ser removido.
+/// - Remove o animal do vetor.
+/// - Salva os dados atualizados em JSON.
 fn excluir_animal(animais: &mut Vec<Animal>) {
     println!("Qual o id do animal?");
-    let id = read_input().parse::<usize>().unwrap();
+    let id_str = read_input();
+    let id = match id_str.parse::<usize>() {
+        Ok(id) if id < animais.len() => id,
+        Ok(_) => {
+            println!("❌ ID inválido: animal não encontrado!");
+            return;
+        },
+        Err(_) => {
+            println!("❌ Por favor, digite um número válido para o ID.");
+            return;
+        }
+    };
 
-    animais.remove(id);
+    let animal_removido = animais.remove(id);
     save_to_json(&animais);
+    
+    println!("✅ Animal removido com sucesso: Tipo: {}, Nome: {}", 
+             animal_removido.tipo, animal_removido.nome);
 }
 
 fn listar_animais(animais: &Vec<Animal>) {

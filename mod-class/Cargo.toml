@@ -1,0 +1,10 @@
+[package]
+name = "mod-class"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+
+[[bin]]
+name = "mod-class"
+path = "main.rs"

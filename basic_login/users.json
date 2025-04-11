@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Alice Johnson",
+    "username": "alicej",
+    "password": "alice123",
+    "privilege": "admin"
+  },
+  {
+    "name": "Bob Smith",
+    "username": "bobsmith",
+    "password": "bobpassword",
+    "privilege": "user"
+  }
+]

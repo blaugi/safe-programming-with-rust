@@ -1,6 +1,5 @@
 use serde::Deserialize;
-use serde_json::{from_reader, to_writer};
-use std::fs;
+use serde_json::from_reader;
 use std::fs::File;
 #[derive(Deserialize, Debug, PartialEq)]
 struct User {
@@ -23,26 +22,38 @@ fn read_users_from_file(file_path: &str) -> Result<Vec<User>, String> {
         Ok(f) => f,
         Err(e) => return Err(format!("Failed to open file: {}", e)),
     };
-    
+
     let users: Result<Vec<User>, serde_json::Error> = from_reader(file);
     match users {
         Ok(value) => Ok(value),
-        Err(error) => Err(format!("Failed to parse JSON: {}", error)),
+        Err(error) => return Err(format!("Failed to parse JSON: {}", error)),
     }
 }
 
 fn login(username: &str, password: &str, users: &[User]) -> LoginResult {
-    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    // To complete
-    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    for user in users {
+        if &user.username == username {
+            if &user.password == password {
+                return LoginResult::Success {
+                    name: (user.name.clone()),
+                    privilege: (user.privilege.clone()),
+                };
+            } else {
+                return LoginResult::IncorrectPassword;
+            }
+        }
+    }
+    LoginResult::UserNotFound
 }
 
 fn main() {
     // Load users from JSON file
     let users = match read_users_from_file("users.json") {
-        //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        // To complete
-        //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        Ok(v) => v,
+        Err(error) => {
+            eprintln!("Error: {}", error);
+            return;
+        }
     };
 
     // Simulate login
@@ -50,10 +61,10 @@ fn main() {
     let password = "alice123";
 
     match login(username, password, &users) {
-        //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        // To complete
-        //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    }
+        LoginResult::Success { name, privilege } => LoginResult::Success { name, privilege },
+        LoginResult::UserNotFound => LoginResult::UserNotFound,
+        LoginResult::IncorrectPassword => LoginResult::IncorrectPassword,
+    };
 }
 
 #[cfg(test)]

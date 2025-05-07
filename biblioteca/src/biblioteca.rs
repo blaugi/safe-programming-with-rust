@@ -2,6 +2,7 @@ pub mod livro;
 pub mod usuario;
 pub mod emprestimo;
 
+use crate::errors::ErroBiblioteca;
 use crate::biblioteca::livro::Livro;
 use crate::biblioteca::emprestimo::Emprestimo;
 use crate::biblioteca::usuario::Usuario;
@@ -29,19 +30,19 @@ impl Biblioteca {
         }
     }
 
-   pub fn adicionar_livro(&mut self, titulo: String, autor: String, ano : u16) -> Uuid {
+   pub fn adicionar_livro(&mut self, titulo: String, autor: String, ano : u16) -> Result<Uuid, ErroBiblioteca>{
     let id = Uuid::new_v4();
     let livro = Livro::new(id, titulo, autor, ano);
     self.dados.mapa_livros.insert(id, livro);
     id
 } 
-   pub fn adicionar_usuario(&mut self, nome : String) -> Uuid {
+   pub fn adicionar_usuario(&mut self, nome : String) -> Result<Uuid, ErroBiblioteca> {
     let id = Uuid::new_v4();
     let user = Usuario::new(id, nome);
     self.dados.mapa_usuarios.insert(id, user);
     id
 }
-   pub fn adicionar_emprestimo(&mut self, id_usuario: Uuid, id_livro : Uuid, data_emprestimo: NaiveDate) -> Uuid {
+   pub fn adicionar_emprestimo(&mut self, id_usuario: Uuid, id_livro : Uuid, data_emprestimo: NaiveDate) -> Result<Uuid, ErroBiblioteca> {
     let id = Uuid::new_v4();
     let emprestimo= Emprestimo::new(id, id_livro, id_usuario, data_emprestimo);
     self.dados.mapa_emprestimos.insert(id, emprestimo);

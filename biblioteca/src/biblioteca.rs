@@ -6,6 +6,7 @@ use crate::biblioteca::livro::Livro;
 use crate::biblioteca::emprestimo::Emprestimo;
 use crate::biblioteca::usuario::Usuario;
 
+use chrono::{Duration, NaiveDate, Utc};
 use std::path::PathBuf;
 use std::collections::HashMap;
 use uuid::Uuid;
@@ -28,9 +29,9 @@ impl Biblioteca {
         }
     }
 
-   pub fn adicionar_livro(&mut self, titulo: String, autor: String) -> Uuid {
+   pub fn adicionar_livro(&mut self, titulo: String, autor: String, ano : u16) -> Uuid {
     let id = Uuid::new_v4();
-    let livro = Livro::new(id, titulo, autor);
+    let livro = Livro::new(id, titulo, autor, ano);
     self.dados.mapa_livros.insert(id, livro);
     id
 } 
@@ -40,10 +41,10 @@ impl Biblioteca {
     self.dados.mapa_usuarios.insert(id, user);
     id
 }
-   pub fn adicionar_emprestimo(&mut self, id_usuario: Uuid, id_livro : Uuid, data_emprestimo) -> Uuid {
+   pub fn adicionar_emprestimo(&mut self, id_usuario: Uuid, id_livro : Uuid, data_emprestimo: NaiveDate) -> Uuid {
     let id = Uuid::new_v4();
-    let emprestimo= Emprestimo::new(id,id_livro, id_usuario, data_emprestimo)
-    self.dados.mapa_emprestimos.insert(id, livro);
+    let emprestimo= Emprestimo::new(id, id_livro, id_usuario, data_emprestimo);
+    self.dados.mapa_emprestimos.insert(id, emprestimo);
     id
 }
 } 

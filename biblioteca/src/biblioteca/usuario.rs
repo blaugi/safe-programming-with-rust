@@ -1,13 +1,24 @@
 use uuid::Uuid;
+use serde::{Serialize, Deserialize};
+use crate::traits::Identificavel;
 
-pub struct Usuario{
-    id : Uuid,
-    nome : String
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Usuario {
+    pub id: Uuid,
+    pub nome: String,
 }
 
-impl Usuario{
-    pub fn new(id : Uuid, nome : String) -> Self{
-        let new_user =  Usuario(id, nome);
-        new_user
+impl Usuario {
+    pub fn new(nome: String) -> Self {
+        Usuario {
+            id: Uuid::new_v4(),
+            nome,
+        }
+    }
+}
+
+impl Identificavel for Usuario {
+    fn id(&self) -> Uuid {
+        self.id
     }
 }

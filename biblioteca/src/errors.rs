@@ -1,8 +1,9 @@
 use std::fmt;
 use std::error::Error;
 use uuid::Uuid;
+use serde::{Serialize, Deserialize};
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum ErroBiblioteca {
     LivroNaoEncontrado(Uuid),
     UsuarioNaoEncontrado(Uuid),

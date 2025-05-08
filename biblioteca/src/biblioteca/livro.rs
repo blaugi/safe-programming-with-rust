@@ -1,7 +1,7 @@
-use uuid::Uuid;
-use serde::{Serialize, Deserialize};
 use crate::errors::ErroBiblioteca;
 use crate::traits::Identificavel;
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
 pub enum StatusLivro {
@@ -34,7 +34,9 @@ impl Livro {
             self.status = StatusLivro::Emprestado;
             Ok(())
         } else {
-            Err(ErroBiblioteca::EstadoInvalido("Livro já emprestado".to_string()))
+            Err(ErroBiblioteca::EstadoInvalido(
+                "Livro já emprestado".to_string(),
+            ))
         }
     }
 
@@ -43,7 +45,9 @@ impl Livro {
             self.status = StatusLivro::Disponivel;
             Ok(())
         } else {
-            Err(ErroBiblioteca::EstadoInvalido("Livro não está emprestado".to_string()))
+            Err(ErroBiblioteca::EstadoInvalido(
+                "Livro não está emprestado".to_string(),
+            ))
         }
     }
 }

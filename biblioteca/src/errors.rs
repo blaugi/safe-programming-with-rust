@@ -1,7 +1,7 @@
-use std::fmt;
+use serde::{Deserialize, Serialize};
 use std::error::Error;
+use std::fmt;
 use uuid::Uuid;
-use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum ErroBiblioteca {
@@ -17,7 +17,9 @@ impl fmt::Display for ErroBiblioteca {
         match self {
             ErroBiblioteca::LivroNaoEncontrado(id) => write!(f, "Livro não encontrado: {}", id),
             ErroBiblioteca::UsuarioNaoEncontrado(id) => write!(f, "Usuário não encontrado: {}", id),
-            ErroBiblioteca::EmprestimoNaoEncontrado(id) => write!(f, "Empréstimo não encontrado: {}", id),
+            ErroBiblioteca::EmprestimoNaoEncontrado(id) => {
+                write!(f, "Empréstimo não encontrado: {}", id)
+            }
             ErroBiblioteca::EstadoInvalido(msg) => write!(f, "Estado inválido: {}", msg),
             ErroBiblioteca::ErroPersistencia(msg) => write!(f, "Erro de persistência: {}", msg),
         }

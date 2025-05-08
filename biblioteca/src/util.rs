@@ -2,10 +2,10 @@ use crate::traits::Identificavel;
 use std::collections::HashMap;
 use uuid::Uuid;
 
-pub fn buscar_item_por_id<T>(
-    colecao: &HashMap<Uuid, T>,
-    id: &Uuid
-) -> Option<&T>
+pub fn buscar_item_por_id<'a, 'b, T>(
+    colecao: &'a HashMap<Uuid, T>,
+    id: &'b Uuid
+) -> Option<&'a T>
 where
     T: Identificavel,
 {

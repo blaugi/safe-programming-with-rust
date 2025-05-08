@@ -1,7 +1,7 @@
-use uuid::Uuid;
-use chrono::{Duration, NaiveDate, Utc};
-use serde::{Serialize, Deserialize};
 use crate::traits::Identificavel;
+use chrono::{Duration, NaiveDate, Utc};
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
 pub enum StatusEmprestimo {

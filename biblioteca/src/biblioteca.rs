@@ -6,17 +6,18 @@ use crate::errors::ErroBiblioteca;
 use crate::biblioteca::livro::{Livro, StatusLivro};
 use crate::biblioteca::emprestimo::{Emprestimo, StatusEmprestimo};
 use crate::biblioteca::usuario::Usuario;
+use crate::util::buscar_item_por_id;
 
-use chrono::{NaiveDate};
+use chrono::NaiveDate;
 use std::path::PathBuf;
 use std::collections::HashMap;
 use uuid::Uuid;
 use serde::{Serialize, Deserialize};
-use std::fs::{File};
+use std::fs::File;
 use std::io::{BufReader, BufWriter};
 
 #[derive(Serialize, Deserialize)]
-struct DadosPersistencia {
+pub struct DadosPersistencia {
     pub mapa_livros: HashMap<Uuid, Livro>,
     pub mapa_usuarios: HashMap<Uuid, Usuario>,
     pub mapa_emprestimos: HashMap<Uuid, Emprestimo>,
@@ -28,14 +29,15 @@ pub struct Biblioteca {
 }
 
 impl Biblioteca {
-    pub fn new() -> Self {
+    pub fn new(persistence_path: PathBuf) -> Self {
+        // inicializa dados vazios e fixa o caminho de persistência
         Self {
             dados: DadosPersistencia {
                 mapa_livros: HashMap::new(),
                 mapa_usuarios: HashMap::new(),
                 mapa_emprestimos: HashMap::new(),
             },
-            persistence_path: PathBuf::new(),
+            persistence_path,
         }
     }
 
@@ -128,8 +130,19 @@ impl Biblioteca {
     }
 
     pub fn buscar_livro_por_id(&self, id_livro: Uuid) -> Result<&Livro, ErroBiblioteca> {
-        self.dados.mapa_livros.get(&id_livro)
-            .ok_or(ErroBiblioteca::LivroNaoEncontrado(id_livro))
+        if let Some(livro) = buscar_item_por_id(&self.dados.mapa_livros, &id_livro) {
+            Ok(livro)
+        } else {
+            Err(ErroBiblioteca::LivroNaoEncontrado(id_livro))
+        }
+    }
+
+    pub fn buscar_usuario_por_id(&self, id_usuario: Uuid) -> Result<&Usuario, ErroBiblioteca> {
+        if let Some(usuario) = buscar_item_por_id(&self.dados.mapa_usuarios, &id_usuario) {
+            Ok(usuario)
+        } else {
+            Err(ErroBiblioteca::UsuarioNaoEncontrado(id_usuario))
+        }
     }
 
     pub fn buscar_livros_por_titulo(&self, titulo: &str) -> Vec<&Livro> {
@@ -150,21 +163,81 @@ impl Biblioteca {
         self.dados.mapa_livros.values().collect()
     }
 
-    pub fn listar_livros_por_status(&self, status: StatusLivro) -> Vec<&Livro> {
+    pub fn listar_usuarios(&self) -> Vec<&Usuario> {
+        self.dados.mapa_usuarios.values().collect()
+    }
+
+    pub fn buscar_livro_por_titulo_exato(&self, titulo: &str) -> Option<&Livro> {
         self.dados.mapa_livros.values()
-            .filter(|livro| livro.status == status)
-            .collect()
+            .find(|livro| livro.titulo.eq_ignore_ascii_case(titulo))
     }
 
-    pub fn listar_emprestimos_ativos(&self) -> Vec<&Emprestimo> {
-        self.dados.mapa_emprestimos.values()
-            .filter(|e| e.status == StatusEmprestimo::Ativo)
-            .collect()
+    pub fn buscar_usuario_por_nome_exato(&self, nome: &str) -> Option<&Usuario> {
+        self.dados.mapa_usuarios.values()
+            .find(|usuario| usuario.nome.eq_ignore_ascii_case(nome))
     }
 
-    pub fn listar_emprestimos_ativos_usuario(&self, id_usuario: Uuid) -> Vec<&Emprestimo> {
-        self.dados.mapa_emprestimos.values()
-            .filter(|e| e.status == StatusEmprestimo::Ativo && e.id_usuario == id_usuario)
-            .collect()
+    pub fn emprestar_livro_por_indices(&mut self, indice_usuario: usize, indice_livro: usize) -> Result<(), ErroBiblioteca> {
+        let usuarios = self.listar_usuarios();
+        let livros = self.listar_todos_livros();
+        
+        if indice_usuario >= usuarios.len() {
+            return Err(ErroBiblioteca::EstadoInvalido("Índice de usuário inválido".to_string()));
+        }
+        
+        if indice_livro >= livros.len() {
+            return Err(ErroBiblioteca::EstadoInvalido("Índice de livro inválido".to_string()));
+        }
+        
+        let id_usuario = usuarios[indice_usuario].id;
+        let id_livro = livros[indice_livro].id;
+        
+        self.emprestar_livro(id_usuario, id_livro)?;
+        Ok(())
+    }
+
+    pub fn devolver_livro_por_indice(&mut self, indice_livro: usize) -> Result<(), ErroBiblioteca> {
+        let livros_emprestados: Vec<&Livro> = self.dados.mapa_livros.values()
+            .filter(|l| l.status == StatusLivro::Emprestado)
+            .collect();
+            
+        if indice_livro >= livros_emprestados.len() {
+            return Err(ErroBiblioteca::EstadoInvalido("Índice de livro inválido".to_string()));
+        }
+        
+        let id_livro = livros_emprestados[indice_livro].id;
+        self.devolver_livro(id_livro)
+    }
+
+    pub fn remover_livro_por_indice(&mut self, indice_livro: usize) -> Result<(), ErroBiblioteca> {
+        let livros = self.listar_todos_livros();
+        
+        if indice_livro >= livros.len() {
+            return Err(ErroBiblioteca::EstadoInvalido("Índice de livro inválido".to_string()));
+        }
+        
+        let id_livro = livros[indice_livro].id;
+        self.remover_livro(id_livro)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    #[test]
+    fn test_persistencia_salvar_e_carregar() {
+        let dir = tempdir().expect("não pôde criar tempdir");
+        let file = dir.path().join("dados.json");
+
+        // cria, adiciona usuário, salva
+        let mut b1 = Biblioteca::new(file.clone());
+        let uid = b1.adicionar_usuario("Test User".into()).unwrap();
+        b1.salvar().unwrap();
+
+        // carrega em outro objeto
+        let b2 = Biblioteca::carregar(&file).unwrap();
+        assert!(b2.dados.mapa_usuarios.contains_key(&uid));
     }
 }

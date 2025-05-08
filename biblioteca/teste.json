@@ -1,0 +1,27 @@
+{
+  "mapa_livros": {
+    "b0977871-5296-471e-96df-16d771297bdd": {
+      "id": "b0977871-5296-471e-96df-16d771297bdd",
+      "titulo": "O Senhor dos Anéis",
+      "autor": "Tolkien",
+      "ano": 1954,
+      "status": "Emprestado"
+    }
+  },
+  "mapa_usuarios": {
+    "ef239908-d435-48ea-a3ca-e09d760315f8": {
+      "id": "ef239908-d435-48ea-a3ca-e09d760315f8",
+      "nome": "Alice"
+    }
+  },
+  "mapa_emprestimos": {
+    "49bf81a9-af7b-4659-8dc6-553c981d90e1": {
+      "id": "49bf81a9-af7b-4659-8dc6-553c981d90e1",
+      "id_livro": "b0977871-5296-471e-96df-16d771297bdd",
+      "id_usuario": "ef239908-d435-48ea-a3ca-e09d760315f8",
+      "data_emprestimo": "2025-05-08",
+      "data_devolucao": "2025-05-22",
+      "status": "Ativo"
+    }
+  }
+}

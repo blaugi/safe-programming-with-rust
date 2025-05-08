@@ -1,6 +1,6 @@
-use uuid::Uuid;
-use serde::{Serialize, Deserialize};
 use crate::traits::Identificavel;
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Usuario {

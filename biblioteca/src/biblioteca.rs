@@ -224,20 +224,183 @@ impl Biblioteca {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::biblioteca::livro::StatusLivro;
     use tempfile::tempdir;
+    use std::path::PathBuf;
 
     #[test]
-    fn test_persistencia_salvar_e_carregar() {
-        let dir = tempdir().expect("não pôde criar tempdir");
-        let file = dir.path().join("dados.json");
+    fn test_new_biblioteca() {
+        let path = PathBuf::from("test.json");
+        let bib = Biblioteca::new(path.clone());
+        assert!(bib.dados.mapa_livros.is_empty());
+        assert!(bib.dados.mapa_usuarios.is_empty());
+        assert!(bib.dados.mapa_emprestimos.is_empty());
+        assert_eq!(bib.persistence_path, path);
+    }
 
-        // cria, adiciona usuário, salva
-        let mut b1 = Biblioteca::new(file.clone());
-        let uid = b1.adicionar_usuario("Test User".into()).unwrap();
-        b1.salvar().unwrap();
+    #[test]
+    fn test_adicionar_livro() {
+        let path = PathBuf::from("test.json");
+        let mut bib = Biblioteca::new(path);
+        
+        let id = bib.adicionar_livro(
+            "O Senhor dos Anéis".to_string(),
+            "J.R.R. Tolkien".to_string(),
+            1954
+        ).unwrap();
+        
+        assert_eq!(bib.dados.mapa_livros.len(), 1);
+        
+        let livro = bib.buscar_livro_por_id(id).unwrap();
+        assert_eq!(livro.titulo, "O Senhor dos Anéis");
+        assert_eq!(livro.autor, "J.R.R. Tolkien");
+        assert_eq!(livro.ano, 1954);
+        assert_eq!(livro.status, StatusLivro::Disponivel);
+    }
 
-        // carrega em outro objeto
-        let b2 = Biblioteca::carregar(&file).unwrap();
-        assert!(b2.dados.mapa_usuarios.contains_key(&uid));
+    #[test]
+    fn test_adicionar_usuario() {
+        let path = PathBuf::from("test.json");
+        let mut bib = Biblioteca::new(path);
+        
+        let id = bib.adicionar_usuario("João Silva".to_string()).unwrap();
+        
+        assert_eq!(bib.dados.mapa_usuarios.len(), 1);
+        
+        let usuario = bib.buscar_usuario_por_id(id).unwrap();
+        assert_eq!(usuario.nome, "João Silva");
+    }
+
+    #[test]
+    fn test_emprestar_e_devolver_livro() {
+        let path = PathBuf::from("test.json");
+        let mut bib = Biblioteca::new(path);
+        
+        // Adicionar um usuário e um livro
+        let id_usuario = bib.adicionar_usuario("Maria Souza".to_string()).unwrap();
+        let id_livro = bib.adicionar_livro(
+            "Duna".to_string(), 
+            "Frank Herbert".to_string(), 
+            1965
+        ).unwrap();
+        
+        // Emprestar o livro
+        let id_emprestimo = bib.emprestar_livro(id_usuario, id_livro).unwrap();
+        
+        // Verificar se o livro está emprestado
+        let livro = bib.buscar_livro_por_id(id_livro).unwrap();
+        assert_eq!(livro.status, StatusLivro::Emprestado);
+        
+        // Verificar se o empréstimo foi registrado
+        assert_eq!(bib.dados.mapa_emprestimos.len(), 1);
+        
+        // Devolver o livro
+        bib.devolver_livro(id_livro).unwrap();
+        
+        // Verificar se o livro está disponível novamente
+        let livro = bib.buscar_livro_por_id(id_livro).unwrap();
+        assert_eq!(livro.status, StatusLivro::Disponivel);
+        
+        // Verificar que o empréstimo foi finalizado mas ainda existe
+        let emprestimo = bib.dados.mapa_emprestimos.get(&id_emprestimo).unwrap();
+        assert_eq!(emprestimo.status, StatusEmprestimo::Devolvido);
+    }
+
+    #[test]
+    fn test_remover_livro() {
+        let path = PathBuf::from("test.json");
+        let mut bib = Biblioteca::new(path);
+        
+        // Adicionar um livro
+        let id_livro = bib.adicionar_livro(
+            "1984".to_string(),
+            "George Orwell".to_string(),
+            1949
+        ).unwrap();
+        
+        // Remover o livro
+        bib.remover_livro(id_livro).unwrap();
+        
+        // Verificar que o livro foi removido
+        assert!(bib.dados.mapa_livros.is_empty());
+        
+        // Tentar remover novamente deve falhar
+        let resultado = bib.remover_livro(id_livro);
+        assert!(resultado.is_err());
+    }
+
+    #[test]
+    fn test_buscar_livros_por_titulo() {
+        let path = PathBuf::from("test.json");
+        let mut bib = Biblioteca::new(path);
+        
+        // Adicionar alguns livros
+        bib.adicionar_livro(
+            "Harry Potter e a Pedra Filosofal".to_string(),
+            "J.K. Rowling".to_string(),
+            1997
+        ).unwrap();
+        
+        bib.adicionar_livro(
+            "Harry Potter e a Câmara Secreta".to_string(),
+            "J.K. Rowling".to_string(),
+            1998
+        ).unwrap();
+        
+        bib.adicionar_livro(
+            "O Hobbit".to_string(),
+            "J.R.R. Tolkien".to_string(),
+            1937
+        ).unwrap();
+        
+        // Buscar por título
+        let resultados = bib.buscar_livros_por_titulo("Harry");
+        assert_eq!(resultados.len(), 2);
+        
+        let resultados = bib.buscar_livros_por_titulo("Hobbit");
+        assert_eq!(resultados.len(), 1);
+        assert_eq!(resultados[0].titulo, "O Hobbit");
+        
+        let resultados = bib.buscar_livros_por_titulo("Não Existe");
+        assert_eq!(resultados.len(), 0);
+    }
+
+    #[test]
+    fn test_persistencia() {
+        // Criar um diretório temporário que será removido automaticamente
+        let dir = tempdir().expect("Falha ao criar diretório temporário");
+        let file_path = dir.path().join("biblioteca_test.json");
+        
+        // Criar uma biblioteca e adicionar dados
+        {
+            let mut bib = Biblioteca::new(file_path.clone());
+            let id_usuario = bib.adicionar_usuario("Ana Pereira".to_string()).unwrap();
+            let id_livro = bib.adicionar_livro(
+                "A Metamorfose".to_string(),
+                "Franz Kafka".to_string(),
+                1915
+            ).unwrap();
+            
+            // Salvar os dados
+            bib.salvar().unwrap();
+        }
+        
+        // Carregar os dados em uma nova instância
+        {
+            let bib = Biblioteca::carregar(&file_path).unwrap();
+            
+            // Verificar se os dados foram carregados corretamente
+            assert_eq!(bib.dados.mapa_usuarios.len(), 1);
+            assert_eq!(bib.dados.mapa_livros.len(), 1);
+            
+            // Verificar o conteúdo
+            let usuario = bib.dados.mapa_usuarios.values().next().unwrap();
+            assert_eq!(usuario.nome, "Ana Pereira");
+            
+            let livro = bib.dados.mapa_livros.values().next().unwrap();
+            assert_eq!(livro.titulo, "A Metamorfose");
+            assert_eq!(livro.autor, "Franz Kafka");
+            assert_eq!(livro.ano, 1915);
+        }
     }
 }

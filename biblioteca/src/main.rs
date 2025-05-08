@@ -253,7 +253,8 @@ fn main() {
                 break;
             }
             _ => println!("Opção inválida"),
-        }    }
+        }
+    }
 }
 
 fn read_input() -> String {

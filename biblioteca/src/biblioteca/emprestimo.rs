@@ -4,7 +4,8 @@ pub struct Emprestimo{
     id : Uuid,
     id_livro : Uuid,
     id_usuario : Uuid,
-    datas : NaiveDate,
+    data_emprestimo : NaiveDate,
+    data_devolucao : NaiveDate,
     status : StatusEmprestimo
 }
 
@@ -14,12 +15,14 @@ pub enum StatusEmprestimo{
 }
 
 impl Emprestimo {
-    pub fn new(id: Uuid, id_livro: Uuid, id_usuario: Uuid, data_emprestimo: NaiveDate) -> Self {
+    pub fn new(id: Uuid, id_livro: Uuid, id_usuario: Uuid) -> Self {
+        let hoje =  Utc::now().date_naive();
         Emprestimo {
             id: id,
             id_livro,
             id_usuario,
-            datas: data_emprestimo,
+            data_emprestimo :  hoje,
+            data_devolucao : hoje + Duration::days(14),
             status: StatusEmprestimo::Ativo
         }
     }
